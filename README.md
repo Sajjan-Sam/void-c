@@ -33,9 +33,21 @@ This project implements "Awwwards-style" web techniques without heavy libraries:
 
 ## 🚀 Usage
 
-You can view the live site here: **[INSERT YOUR GITHUB PAGES LINK HERE]**
+You can view the live site here: **[https://sajjan-sam.github.io/void-c/index.html]**
 
-To run it locally:
-1. Clone the repo:
-   ```bash
-   git clone [https://github.com/your-username/void-c.git](https://github.com/your-username/void-c.git)
+## 🤝 Contributing
+
+Contributions are welcome. If you find a bug in the C code examples or want to improve the memory diagrams:
+
+1. Fork the project.
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`).
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`).
+4. Push to the branch (`git push origin feature/AmazingFeature`).
+5. Open a Pull Request.
+
+## 📝 License
+
+Distributed under the MIT License. See `LICENSE` for more information.
+
+---
+*Designed by Sajjan Singh.*
