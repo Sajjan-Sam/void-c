@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VOID</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Syncopate:wght@400;700&family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- CORE VARIABLES --- */
+        :root {
+            --bg-color: #050505;
+            --surface-color: #0a0a0a;
+            --card-bg: #0f0f0f;
+            --text-primary: #ededed;
+            --text-secondary: #888;
+            --accent-color: #ff3c00; /* International Orange */
+            --accent-dim: rgba(255, 60, 0, 0.1);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --grid-line: rgba(255, 255, 255, 0.03);
+            --font-display: 'Syncopate', sans-serif;
+            --font-body: 'Space Grotesk', sans-serif;
+            --font-code: 'JetBrains Mono', monospace;
+            --easing: cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* --- RESET & BASE --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; cursor: none; }
+        
+        html { scroll-behavior: smooth; }
+        
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        a { text-decoration: none; color: inherit; cursor: none; }
+        ul { list-style: none; }
+
+        /* --- UTILITIES --- */
+        .noise {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 900; opacity: 0.04;
+            background: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='1'/%3E%3C/svg%3E");
+        }
+
+        /* Custom Cursor */
+        .cursor-dot, .cursor-circle {
+            position: fixed; top: 0; left: 0; transform: translate(-50%, -50%);
+            border-radius: 50%; pointer-events: none; z-index: 9999;
+        }
+        .cursor-dot { width: 6px; height: 6px; background: var(--accent-color); }
+        .cursor-circle { 
+            width: 40px; height: 40px; border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: width 0.3s, height 0.3s, background-color 0.3s;
+        }
+        body.hovering .cursor-circle {
+            width: 80px; height: 80px; background: rgba(255, 60, 0, 0.1); border-color: var(--accent-color);
+        }
+
+        /* --- LAYOUT --- */
+        .container {
+            max-width: 1440px; margin: 0 auto; padding: 0 5vw;
+        }
+        
+        section { padding: 8rem 0; position: relative; border-bottom: 1px solid var(--grid-line); }
+
+        /* --- NAVIGATION --- */
+        nav {
+            position: fixed; top: 0; left: 0; width: 100%; padding: 2rem 5vw;
+            display: flex; justify-content: space-between; align-items: center;
+            z-index: 1000; mix-blend-mode: difference;
+        }
+
+        .logo {
+            font-family: var(--font-display); font-weight: 700;
+            text-transform: uppercase; font-size: 1.2rem; letter-spacing: 2px;
+        }
+
+        .nav-links { display: flex; gap: 3rem; }
+        .nav-links a {
+            font-family: var(--font-code); font-size: 0.8rem; text-transform: uppercase;
+            position: relative;
+        }
+        .nav-links a::after {
+            content: ''; position: absolute; bottom: -5px; left: 0; width: 0; height: 1px;
+            background: var(--accent-color); transition: width 0.3s var(--easing);
+        }
+        .nav-links a:hover::after { width: 100%; }
+
+        /* --- HERO SECTION --- */
+        .hero {
+            height: 100vh; display: flex; flex-direction: column; justify-content: center;
+            position: relative; overflow: hidden; border-bottom: none;
+        }
+
+        #heroCanvas {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+            opacity: 0.4;
+        }
+
+        .hero-badge {
+            font-family: var(--font-code); color: var(--accent-color);
+            border: 1px solid var(--accent-color); padding: 0.5rem 1rem;
+            display: inline-block; margin-bottom: 2rem; border-radius: 50px;
+            font-size: 0.8rem; text-transform: uppercase;
+        }
+
+        .hero h1 {
+            font-family: var(--font-display); font-size: clamp(3rem, 9vw, 8rem);
+            line-height: 0.9; text-transform: uppercase; font-weight: 700;
+            margin-bottom: 2rem;
+        }
+
+        .hero h1 span {
+            display: block; opacity: 0; transform: translateY(50px);
+            animation: textReveal 1s var(--easing) forwards;
+        }
+        .hero h1 span:nth-child(2) { animation-delay: 0.1s; color: transparent; -webkit-text-stroke: 1px var(--text-primary); }
+        .hero h1 span:nth-child(3) { animation-delay: 0.2s; color: var(--accent-color); }
+
+        .hero p {
+            font-family: var(--font-body); max-width: 600px; color: var(--text-secondary);
+            font-size: 1.2rem; line-height: 1.6; margin-bottom: 3rem;
+            opacity: 0; animation: fadeIn 1s 0.5s forwards;
+        }
+
+        /* --- STATS GRID --- */
+        .stats-bar {
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color);
+        }
+        .stat-item {
+            padding: 3rem 2rem; border-right: 1px solid var(--border-color);
+            text-align: center; transition: background 0.3s;
+        }
+        .stat-item:last-child { border-right: none; }
+        .stat-item:hover { background: var(--card-bg); }
+        .stat-num {
+            display: block; font-family: var(--font-display); font-size: 3rem;
+            color: var(--text-primary); margin-bottom: 0.5rem;
+        }
+        .stat-label { font-family: var(--font-code); font-size: 0.8rem; color: var(--accent-color); }
+
+        /* --- TOPICS GRID --- */
+        .section-title {
+            font-family: var(--font-display); font-size: clamp(2rem, 5vw, 4rem);
+            margin-bottom: 4rem; text-align: center;
+        }
+
+        .topics-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 2rem;
+        }
+
+        .topic-card {
+            background: var(--card-bg); border: 1px solid var(--border-color);
+            padding: 2.5rem; position: relative; transition: all 0.4s var(--easing);
+            display: flex; flex-direction: column; justify-content: space-between;
+            overflow: hidden; min-height: 350px;
+        }
+
+        /* Hover Effect: Glitch Border */
+        .topic-card::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%;
+            background: var(--accent-color); transform: scaleY(0); transform-origin: bottom;
+            transition: transform 0.4s var(--easing);
+        }
+        .topic-card:hover { transform: translateY(-10px); border-color: rgba(255,255,255,0.2); }
+        .topic-card:hover::before { transform: scaleY(1); transform-origin: top; }
+
+        .topic-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; }
+        .topic-num {
+            font-family: var(--font-code); font-size: 0.9rem; color: var(--text-secondary);
+            border: 1px solid var(--border-color); padding: 5px 10px; border-radius: 4px;
+        }
+        .difficulty {
+            font-family: var(--font-code); font-size: 0.7rem; text-transform: uppercase;
+            padding: 4px 8px; border-radius: 2px;
+        }
+        .diff-beg { background: rgba(0, 255, 100, 0.1); color: #00ff64; }
+        .diff-int { background: rgba(255, 160, 0, 0.1); color: #ffa000; }
+        .diff-adv { background: rgba(255, 60, 0, 0.1); color: #ff3c00; }
+
+        .topic-card h3 {
+            font-family: var(--font-body); font-size: 1.5rem; margin-bottom: 1rem;
+            font-weight: 500;
+        }
+        .topic-card p {
+            color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6; margin-bottom: 2rem;
+            flex-grow: 1;
+        }
+
+        .subtopics {
+            border-top: 1px solid var(--border-color); padding-top: 1.5rem; margin-bottom: 1.5rem;
+            font-family: var(--font-code); font-size: 0.8rem; color: var(--text-secondary);
+        }
+        .subtopics strong { color: var(--text-primary); }
+
+        .card-link {
+            font-family: var(--font-code); color: var(--accent-color); font-weight: 700;
+            text-transform: uppercase; letter-spacing: 1px; display: inline-flex; align-items: center;
+        }
+        .card-link::after { content: '→'; margin-left: 10px; transition: transform 0.3s; }
+        .topic-card:hover .card-link::after { transform: translateX(10px); }
+
+        /* --- LEARNING PATH --- */
+        .path-container {
+            display: flex; justify-content: space-between; position: relative;
+            margin: 6rem 0; padding: 0 2rem;
+        }
+        .path-line {
+            position: absolute; top: 30px; left: 0; width: 100%; height: 2px;
+            background: var(--border-color); z-index: -1;
+        }
+        .path-step { text-align: center; background: var(--bg-color); padding: 0 1rem; }
+        .step-dot {
+            width: 60px; height: 60px; background: var(--card-bg); border: 2px solid var(--accent-color);
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 1.5rem; font-family: var(--font-code); font-weight: 700; font-size: 1.2rem;
+            transition: all 0.3s;
+        }
+        .path-step:hover .step-dot { background: var(--accent-color); color: black; transform: scale(1.1); }
+        .step-label { font-family: var(--font-display); font-size: 0.9rem; margin-top: 1rem; }
+
+        /* --- INSTRUCTOR --- */
+        .instructor-layout {
+            display: grid; grid-template-columns: 1fr 1.5fr; gap: 4rem;
+            border: 1px solid var(--border-color); background: var(--surface-color);
+        }
+        .instructor-img {
+            background: #111; min-height: 400px; position: relative; overflow: hidden;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .instructor-img::after {
+            content: 'SAJJAN SINGH'; position: absolute; font-family: var(--font-display);
+            font-size: 4rem; color: rgba(255,255,255,0.02); transform: rotate(-90deg);
+        }
+        .instructor-content { padding: 4rem; display: flex; flex-direction: column; justify-content: center; }
+        .instructor-badge-role {
+            font-family: var(--font-code); color: var(--accent-color); margin-bottom: 1rem;
+        }
+        .instructor-content h3 {
+            font-family: var(--font-display); font-size: 3rem; margin-bottom: 2rem;
+        }
+        .instructor-bio {
+            color: var(--text-secondary); font-size: 1.1rem; line-height: 1.8; margin-bottom: 2rem;
+        }
+        .feature-list li {
+            font-family: var(--font-code); margin-bottom: 0.8rem; display: flex; align-items: center;
+        }
+        .feature-list li::before {
+            content: ''; width: 6px; height: 6px; background: var(--accent-color);
+            margin-right: 15px;
+        }
+
+        /* --- FOOTER --- */
+        .big-footer {
+            padding: 8rem 5vw 2rem; background: var(--surface-color);
+            display: flex; flex-direction: column; align-items: center; text-align: center;
+        }
+        .footer-cta h2 {
+            font-family: var(--font-display); font-size: clamp(2rem, 6vw, 6rem);
+            line-height: 1; margin-bottom: 2rem;
+        }
+        .footer-cta p { color: var(--text-secondary); font-size: 1.2rem; margin-bottom: 3rem; }
+        
+        .footer-btn {
+            background: var(--accent-color); color: white; padding: 1.5rem 4rem;
+            font-family: var(--font-code); font-weight: 700; text-transform: uppercase;
+            letter-spacing: 2px; border: none; transition: transform 0.3s;
+        }
+        .footer-btn:hover { transform: scale(1.05); background: white; color: black; }
+
+        .footer-bottom {
+            margin-top: 6rem; width: 100%; padding-top: 2rem; border-top: 1px solid var(--border-color);
+            display: flex; justify-content: space-between; font-family: var(--font-code); font-size: 0.8rem; color: var(--text-secondary);
+        }
+
+        /* --- ANIMATIONS --- */
+        @keyframes textReveal { to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { to { opacity: 1; } }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 900px) {
+            .nav-links { display: none; }
+            .stats-bar { grid-template-columns: 1fr 1fr; }
+            .stat-item { border-bottom: 1px solid var(--border-color); }
+            .stat-item:nth-child(2) { border-right: none; }
+            .instructor-layout { grid-template-columns: 1fr; }
+            .instructor-img { min-height: 300px; }
+            .path-container { flex-direction: column; gap: 2rem; }
+            .path-line { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="noise"></div>
+    <div class="cursor-dot"></div>
+    <div class="cursor-circle"></div>
+
+    <nav>
+        <a href="#" class="logo" data-hover>C / MSTR</a>
+        <div class="nav-links">
+            <a href="#topics" data-hover>Topics</a>
+            <a href="#path" data-hover>Path</a>
+            <a href="#instructor" data-hover>Instructor</a>
+            <a href="#contact" data-hover>Start Now</a>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <canvas id="heroCanvas"></canvas>
+        <div class="container">
+            <div class="hero-badge fade-in">Instructor: Sajjan Singh</div>
+            <h1>
+                <span>System</span>
+                <span>Level</span>
+                <span>Mastery</span>
+            </h1>
+            <p>Deconstruct the machine. A comprehensive, in-depth guide to C programming covering memory management, pointers, and compiler architecture.</p>
+            <a href="#topics" class="footer-btn" data-hover style="display:inline-block; text-align:center;">Initialize Learning_</a>
+        </div>
+    </section>
+
+    <div class="stats-bar">
+        <div class="stat-item">
+            <span class="stat-num" data-target="19">0</span>
+            <span class="stat-label">MODULES</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-num" data-target="500">0</span>
+            <span class="stat-label">EXAMPLES</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-num">100%</span>
+            <span class="stat-label">OPEN SOURCE</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-num">2026</span>
+            <span class="stat-label">UPDATED</span>
+        </div>
+    </div>
+
+    <section id="topics">
+        <div class="container">
+            <h2 class="section-title">Curriculum Index</h2>
+            <div class="topics-grid">
+                
+                <div class="topic-card scroll-reveal" data-hover>
+                    <div class="topic-header">
+                        <span class="topic-num">01</span>
+                        <span class="difficulty diff-beg">Beginner</span>
+                    </div>
+                    <h3>Intro to Computing</h3>
+                    <p>Discover the fundamentals of C, why it matters, and how computers execute your code at the machine level.</p>
+                    <div class="subtopics"><strong>Scope:</strong> History, Computing Basics, Memory Model</div>
+                    <a href="history.html" class="card-link">Access Module</a>
+                </div>
+
+                <div class="topic-card scroll-reveal" data-hover>
+                    <div class="topic-header">
+                        <span class="topic-num">02</span>
+                        <span class="difficulty diff-beg">Beginner</span>
+                    </div>
+                    <h3>Compilation Model</h3>
+                    <p>Understand the complete journey from source code to executable: preprocessing, compiling, assembling, and linking.</p>
+                    <div class="subtopics"><strong>Scope:</strong> GCC Stages, Object Files, Linking</div>
+                    <a href="index.html" class="card-link">Access Module</a>
+                </div>
+
+                <div class="topic-card scroll-reveal" data-hover>
+                    <div class="topic-header">
+                        <span class="topic-num">03</span>
+                        <span class="difficulty diff-beg">Beginner</span>
+                    </div>
+                    <h3>Data Representation</h3>
+                    <p>Master variables, data types, constants, and how C physically represents data in binary.</p>
+                    <div class="subtopics"><strong>Scope:</strong> Primitives, Endianness, Overflow</div>
+                    <a href="var.html" class="card-link">Access Module</a>
+                </div>
+
+                <div class="topic-card scroll-reveal" data-hover>
+                    <div class="topic-header">
+                        <span class="topic-num">04</span>
+                        <span class="difficulty diff-beg">Beginner</span>
+                    </div>
+                    <h3>Operators & Logic</h3>
+                    <p>Learn arithmetic, logical, and bitwise operators. Write safe expressions that execute predictably.</p>
+                    <div class="subtopics"><strong>Scope:</strong> Precedence, Bitwise Ops, Evaluation</div>
+                    <a href="operator.html" class="card-link">Access Module</a>
+                </div>
+
+                <div class="topic-card scroll-reveal" data-hover>
+                    <div class="topic-header">
+                        <span class="topic-num">05</span>
+                        <span class="difficulty diff-beg">Beginner</span>
+                    </div>
+                    <h3>Control Flow</h3>
+                    <p>Master if/else, switch, and loops. Understand branch prediction and jump tables at the assembly level.</p>
+                    <div class="subtopics"><strong>Scope:</strong> Branching, Loops, Optimization</div>
+                    <a href="control.html" class="card-link">Access Module</a>
+                </div>
+
+                <div class="topic-card scroll-reveal" data-hover>
+                    <div class="topic-header">
+                        <span class="topic-num">06</span>
+                        <span class="difficulty diff-int">Intermediate</span>
+                    </div>
+                    <h3>Functions & Stack</h3>
+                    <p>Understand the Call Stack, stack frames, recursion, and pass-by-value mechanisms.</p>
+                    <div class="subtopics"><strong>Scope:</strong> Stack Frames, Recursion, Scope</div>
+                    <a href="function.html" class="card-link">Access Module</a>
+                </div>
+
+                <div class="topic-card scroll-reveal" data-hover>
+                    <div class="topic-header">
+                        <span class="topic-num">07</span>
+                        <span class="difficulty diff-int">Intermediate</span>
+                    </div>
+                    <h3>Arrays & Strings</h3>
+                    <p>Master contiguous memory collections, pointer decay, and null-terminated string safety.</p>
+                    <div class="subtopics"><strong>Scope:</strong> Buffers, Multi-dim Arrays, Safety</div>
+                    <a href="array.html" class="card-link">Access Module</a>
+                </div>
+
+                <div class="topic-card scroll-reveal" data-hover style="border-color: var(--accent-color);">
+                    <div class="topic-header">
+                        <span class="topic-num">08</span>
+                        <span class="difficulty diff-adv">Core Concept</span>
+                    </div>
+                    <h3 style="color: var(--accent-color);">Pointers Mastery</h3>
+                    <p>Deep dive into the most powerful feature of C. Pointer arithmetic, double pointers, and generic void pointers.</p>
+                    <div class="subtopics"><strong>Scope:</strong> Dereferencing, Arithmetic, void*</div>
+                    <a href="pointer.html" class="card-link">Access Module</a>
+                </div>
+
+                <div class="topic-card scroll-reveal" data-hover>
+                    <div class="topic-header">
+                        <span class="topic-num">09</span>
+                        <span class="difficulty diff-adv">Advanced</span>
+                    </div>
+                    <h3>Dynamic Memory</h3>
+                    <p>Manual memory management using malloc/free. Debugging memory leaks and fragmentation.</p>
+                    <div class="subtopics"><strong>Scope:</strong> Heap, Leaks, Valgrind, realloc</div>
+                    <a href="memory.html" class="card-link">Access Module</a>
+                </div>
+
+                <div class="topic-card scroll-reveal" data-hover>
+                    <div class="topic-header">
+                        <span class="topic-num">10</span>
+                        <span class="difficulty diff-adv">Advanced</span>
+                    </div>
+                    <h3>Structs & Unions</h3>
+                    <p>Creating custom data types. Memory alignment, padding, and bit-fields.</p>
+                    <div class="subtopics"><strong>Scope:</strong> Padding, Alignment, Enums</div>
+                    <a href="structure.html" class="card-link">Access Module</a>
+                </div>
+
+                <div class="topic-card scroll-reveal" data-hover>
+                    <div class="topic-header">
+                        <span class="topic-num">11</span>
+                        <span class="difficulty diff-adv">Advanced</span>
+                    </div>
+                    <h3>Preprocessor</h3>
+                    <p>Macros, conditional compilation, and header guards. Writing professional Makefiles.</p>
+                    <div class="subtopics"><strong>Scope:</strong> #define, Macros, Build Systems</div>
+                    <a href="preprocessor.html" class="card-link">Access Module</a>
+                </div>
+
+                <div class="topic-card scroll-reveal" data-hover>
+                    <div class="topic-header">
+                        <span class="topic-num">12</span>
+                        <span class="difficulty diff-int">Intermediate</span>
+                    </div>
+                    <h3>File I/O</h3>
+                    <p>Working with file streams, file descriptors, buffering, and binary file serialization.</p>
+                    <div class="subtopics"><strong>Scope:</strong> fopen, Streams, Binary Mode</div>
+                    <a href="file.html" class="card-link">Access Module</a>
+                </div>
+                
+                <div class="topic-card scroll-reveal" data-hover style="opacity: 0.7;">
+                    <div class="topic-header"><span class="topic-num">13</span><span class="difficulty diff-adv">System</span></div>
+                    <h3>Low-Level & SysCalls</h3>
+                    <p>Bit manipulation, inline assembly, and direct kernel interaction.</p>
+                    <div class="subtopics">Status: Coming Soon</div>
+                </div>
+
+                 <div class="topic-card scroll-reveal" data-hover style="opacity: 0.7;">
+                    <div class="topic-header"><span class="topic-num">14</span><span class="difficulty diff-adv">Tools</span></div>
+                    <h3>Debugging & Opt</h3>
+                    <p>GDB, Profiling, and optimization flags (O2, O3).</p>
+                    <div class="subtopics">Status: Coming Soon</div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <section id="path">
+        <div class="container">
+            <h2 class="section-title">The Path</h2>
+            <div class="path-container">
+                <div class="path-line"></div>
+                <div class="path-step">
+                    <div class="step-dot">1</div>
+                    <div class="step-label">Foundations</div>
+                </div>
+                <div class="path-step">
+                    <div class="step-dot">2</div>
+                    <div class="step-label">Memory</div>
+                </div>
+                <div class="path-step">
+                    <div class="step-dot">3</div>
+                    <div class="step-label">Structures</div>
+                </div>
+                <div class="path-step">
+                    <div class="step-dot">4</div>
+                    <div class="step-label">System</div>
+                </div>
+                <div class="path-step">
+                    <div class="step-dot">5</div>
+                    <div class="step-label">Expert</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="instructor">
+        <div class="container">
+            <div class="instructor-layout">
+                <div class="instructor-img">
+                    </div>
+                <div class="instructor-content">
+                    <span class="instructor-badge-role">SYSTEMS ARCHITECT</span>
+                    <h3>Sajjan Singh</h3>
+                    <p class="instructor-bio">
+                        A passionate educator and software engineer dedicated to teaching C programming with depth and clarity. With years of experience in systems programming and compiler development, Sajjan creates comprehensive learning materials that bridge the gap between theory and practice.
+                    </p>
+                    <ul class="feature-list">
+                        <li>Expert in Systems Programming</li>
+                        <li>Deep Knowledge of Compilers & OS</li>
+                        <li>Real-world Industry Experience</li>
+                        <li>Interactive Teaching Approach</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="big-footer">
+        <div class="footer-cta">
+            <h2>READY TO COMPILE?</h2>
+            <p>Start your journey into the memory address space.</p>
+            <a href="#topics" class="footer-btn" data-hover>EXPLORE TOPICS</a>
+        </div>
+        
+        <div class="footer-bottom">
+            <div>&copy; 2026 C / MSTR. Instructor: Sajjan Singh</div>
+            <div>
+                <a href="#topics" style="margin-right: 20px;">Topics</a>
+                <a href="#instructor" style="margin-right: 20px;">Instructor</a>
+                <a href="index.html">History</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // --- 1. CUSTOM CURSOR ---
+        const cursorDot = document.querySelector('.cursor-dot');
+        const cursorCircle = document.querySelector('.cursor-circle');
+        
+        window.addEventListener('mousemove', (e) => {
+            cursorDot.style.left = `${e.clientX}px`;
+            cursorDot.style.top = `${e.clientY}px`;
+            
+            // Inertia effect for circle
+            cursorCircle.animate({
+                left: `${e.clientX}px`,
+                top: `${e.clientY}px`
+            }, { duration: 500, fill: "forwards" });
+        });
+
+        // Hover states
+        document.querySelectorAll('[data-hover]').forEach(el => {
+            el.addEventListener('mouseenter', () => document.body.classList.add('hovering'));
+            el.addEventListener('mouseleave', () => document.body.classList.remove('hovering'));
+        });
+
+        // --- 2. CANVAS ANIMATION (Nodes & Connections) ---
+        const canvas = document.getElementById('heroCanvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        
+        function resizeCanvas() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        const particles = [];
+        const particleCount = 60;
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                if (this.x < 0) this.x = width;
+                if (this.x > width) this.x = 0;
+                if (this.y < 0) this.y = height;
+                if (this.y > height) this.y = 0;
+            }
+            draw() {
+                ctx.fillStyle = '#ff3c00';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 1.5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        for (let i = 0; i < particleCount; i++) particles.push(new Particle());
+
+        function animateCanvas() {
+            ctx.clearRect(0, 0, width, height);
+            ctx.strokeStyle = 'rgba(255, 60, 0, 0.15)';
+            ctx.lineWidth = 1;
+
+            particles.forEach((p, index) => {
+                p.update();
+                p.draw();
+                // Connect nearby particles
+                for (let j = index + 1; j < particles.length; j++) {
+                    const p2 = particles[j];
+                    const dx = p.x - p2.x;
+                    const dy = p.y - p2.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < 150) {
+                        ctx.beginPath();
+                        ctx.moveTo(p.x, p.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.stroke();
+                    }
+                }
+            });
+            requestAnimationFrame(animateCanvas);
+        }
+        animateCanvas();
+
+        // --- 3. SCROLL REVEAL & COUNTER ---
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.scroll-reveal').forEach((el, index) => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(30px)';
+            el.style.transition = `all 0.6s cubic-bezier(0.16, 1, 0.3, 1) ${index * 0.05}s`;
+            observer.observe(el);
+        });
+
+        // Number Counter
+        const statsObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const el = entry.target;
+                    const target = parseInt(el.getAttribute('data-target'));
+                    if (target) {
+                        let count = 0;
+                        const inc = target / 50;
+                        const interval = setInterval(() => {
+                            count += inc;
+                            if (count >= target) {
+                                el.textContent = target + (target > 100 ? '+' : '');
+                                clearInterval(interval);
+                            } else {
+                                el.textContent = Math.ceil(count);
+                            }
+                        }, 20);
+                        statsObserver.unobserve(el);
+                    }
+                }
+            });
+        });
+        document.querySelectorAll('.stat-num').forEach(el => statsObserver.observe(el));
+    </script>
+</body>
+</html>

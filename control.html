@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C / FLOW — Control Architecture</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Syncopate:wght@400;700&family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- 1. CORE VARIABLES --- */
+        :root {
+            --bg-color: #050505;
+            --surface-color: #0b0b0b;
+            --card-bg: #111111;
+            --text-primary: #ffffff;
+            --text-secondary: #999999;
+            --accent-color: #ff3c00; /* International Orange */
+            --accent-glow: rgba(255, 60, 0, 0.15);
+            --border-color: rgba(255, 255, 255, 0.12);
+            --grid-line: rgba(255, 255, 255, 0.04);
+            
+            /* Typography */
+            --font-display: 'Syncopate', sans-serif;
+            --font-body: 'Space Grotesk', sans-serif;
+            --font-code: 'JetBrains Mono', monospace;
+            
+            --easing: cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* --- 2. RESET & BASE --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; cursor: none; }
+        
+        html { scroll-behavior: smooth; }
+        
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.7;
+        }
+
+        a { text-decoration: none; color: inherit; cursor: none; }
+        ul { list-style: none; }
+
+        /* --- 3. UTILITIES --- */
+        /* Film Grain Noise */
+        .noise {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 900; opacity: 0.035;
+            background: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='1'/%3E%3C/svg%3E");
+        }
+
+        /* Custom Magnetic Cursor */
+        .cursor-dot, .cursor-circle {
+            position: fixed; top: 0; left: 0; transform: translate(-50%, -50%);
+            border-radius: 50%; pointer-events: none; z-index: 9999;
+        }
+        .cursor-dot { width: 6px; height: 6px; background: var(--accent-color); }
+        .cursor-circle { 
+            width: 40px; height: 40px; border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: width 0.3s, height 0.3s, background-color 0.3s;
+        }
+        body.hovering .cursor-circle {
+            width: 80px; height: 80px; background: var(--accent-glow); border-color: var(--accent-color);
+        }
+
+        /* --- 4. LAYOUT --- */
+        .container {
+            max-width: 1400px; margin: 0 auto; padding: 0 5vw;
+        }
+        
+        section { 
+            padding: 8rem 0; 
+            position: relative; 
+            border-bottom: 1px solid var(--grid-line); 
+        }
+
+        /* --- 5. NAVIGATION --- */
+        nav {
+            position: fixed; top: 0; left: 0; width: 100%; padding: 1.5rem 5vw;
+            display: flex; justify-content: space-between; align-items: center;
+            z-index: 1000; background: rgba(5,5,5,0.85); backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .logo {
+            font-family: var(--font-display); font-weight: 700;
+            text-transform: uppercase; font-size: 1.1rem; letter-spacing: 2px;
+            color: white; transition: color 0.3s;
+        }
+        .logo span { color: var(--accent-color); }
+
+        .nav-links { display: flex; gap: 2rem; }
+        .nav-links a {
+            font-family: var(--font-code); font-size: 0.75rem; text-transform: uppercase;
+            position: relative; color: var(--text-secondary); letter-spacing: 1px;
+            transition: color 0.3s;
+        }
+        .nav-links a:hover { color: white; }
+        .nav-links a::after {
+            content: ''; position: absolute; bottom: -5px; left: 0; width: 0; height: 1px;
+            background: var(--accent-color); transition: width 0.3s var(--easing);
+        }
+        .nav-links a:hover::after { width: 100%; }
+
+        /* --- 6. HERO SECTION --- */
+        .hero {
+            min-height: 100vh; display: flex; flex-direction: column; justify-content: center;
+            position: relative; overflow: hidden; border-bottom: none; padding-top: 10rem;
+        }
+
+        #heroCanvas {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+            opacity: 0.3;
+        }
+
+        .hero h1 {
+            font-family: var(--font-display); font-size: clamp(3rem, 10vw, 7rem);
+            line-height: 0.95; text-transform: uppercase; font-weight: 700;
+            margin-bottom: 2rem; color: white;
+        }
+
+        .hero h1 span {
+            display: block; opacity: 0; transform: translateY(50px);
+            animation: textReveal 1s var(--easing) forwards;
+        }
+        .hero h1 span:nth-child(1) { animation-delay: 0.1s; }
+        .hero h1 span:nth-child(2) { animation-delay: 0.2s; color: transparent; -webkit-text-stroke: 1px white; }
+        .hero h1 span:nth-child(3) { animation-delay: 0.3s; color: var(--accent-color); -webkit-text-stroke: 0; }
+
+        .hero p {
+            font-family: var(--font-body); max-width: 600px; color: var(--text-secondary);
+            font-size: 1.1rem; line-height: 1.7; margin-bottom: 3rem;
+            opacity: 0; animation: fadeIn 1s 0.6s forwards;
+        }
+
+        .btn-group { display: flex; gap: 1.5rem; opacity: 0; animation: fadeIn 1s 0.8s forwards; }
+        
+        .btn {
+            background: transparent; color: white; padding: 1rem 2.5rem;
+            font-family: var(--font-code); font-weight: 700; text-transform: uppercase;
+            border: 1px solid var(--border-color); transition: all 0.3s;
+            display: inline-flex; align-items: center; justify-content: center;
+            letter-spacing: 1px;
+        }
+        .btn-primary { background: var(--accent-color); border-color: var(--accent-color); color: #000; }
+        .btn:hover { transform: translateY(-4px); box-shadow: 0 10px 30px rgba(255, 60, 0, 0.15); }
+
+        /* --- 7. COMPONENTS --- */
+        .section-title {
+            font-family: var(--font-display); font-size: clamp(2rem, 5vw, 3.5rem);
+            margin-bottom: 1.5rem; color: white; text-transform: uppercase;
+        }
+        .section-desc {
+            color: var(--text-secondary); margin-bottom: 4rem; max-width: 800px; 
+            font-size: 1.1rem; line-height: 1.8;
+        }
+
+        .grid-3 {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 2rem;
+        }
+
+        .card {
+            background: var(--card-bg); border: 1px solid var(--border-color);
+            padding: 2.5rem; position: relative; transition: all 0.4s var(--easing);
+            overflow: hidden;
+        }
+        .card:hover { transform: translateY(-10px); border-color: var(--accent-color); }
+        .card h3 { 
+            font-family: var(--font-display); font-size: 1.25rem; margin-bottom: 1rem; 
+            color: white; text-transform: uppercase; 
+        }
+        .card p { color: var(--text-secondary); font-size: 0.95rem; line-height: 1.7; margin-bottom: 1rem; }
+        
+        /* --- 8. TERMINAL / CODE WINDOW (FIXED) --- */
+        .terminal-window {
+            background: #080808; border: 1px solid var(--border-color); 
+            border-radius: 8px; overflow: hidden; margin-top: 1.5rem; margin-bottom: 1.5rem;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+        .terminal-header {
+            background: #151515; padding: 0.8rem 1.2rem; border-bottom: 1px solid #222;
+            display: flex; gap: 0.6rem; align-items: center;
+        }
+        .dot { width: 12px; height: 12px; border-radius: 50%; }
+        .code-content { 
+            padding: 2rem; 
+            font-family: var(--font-code); 
+            font-size: 0.9rem; 
+            line-height: 1.6;
+            color: #d4d4d4; 
+            overflow-x: auto;
+            /* CRITICAL FIX: Preserves line breaks and spacing */
+            white-space: pre; 
+        }
+        
+        /* Syntax Highlighting */
+        .kw { color: #ff3c00; font-weight: bold; } /* Keyword */
+        .str { color: #a5d6ff; } /* String */
+        .num { color: #b5cea8; } /* Number */
+        .cmt { color: #6a9955; font-style: italic; } /* Comment */
+        .fn { color: #dcdcaa; } /* Function */
+
+        /* --- 9. SPECIAL BOXES --- */
+        .warning-box {
+            border-left: 3px solid #ff0000; background: rgba(255, 0, 0, 0.05);
+            padding: 2rem; margin-top: 2rem; color: #ff9999;
+        }
+        .warning-box strong { color: #ff5555; display: block; margin-bottom: 0.5rem; }
+        
+        .highlight-box {
+            border-left: 3px solid var(--accent-color); background: rgba(255, 60, 0, 0.05);
+            padding: 2rem; margin-top: 2rem; color: var(--text-secondary);
+        }
+        .highlight-box strong { color: white; display: block; margin-bottom: 0.5rem; }
+
+        .machine-level {
+            border: 1px solid var(--accent-color); background: rgba(255, 60, 0, 0.02);
+            padding: 2.5rem; margin-top: 3rem; position: relative;
+        }
+        .machine-level::before {
+            content: 'CPU LEVEL'; position: absolute; top: -12px; left: 20px;
+            background: #000; color: var(--accent-color); padding: 0 10px;
+            font-family: var(--font-code); font-size: 0.8rem; font-weight: bold;
+        }
+
+        /* --- 10. ANIMATIONS --- */
+        @keyframes textReveal { to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { to { opacity: 1; } }
+        .scroll-reveal { opacity: 0; transform: translateY(40px); transition: all 0.8s var(--easing); }
+        .scroll-reveal.in-view { opacity: 1; transform: translateY(0); }
+
+        /* --- 11. FOOTER --- */
+        footer {
+            padding: 6rem 5vw; border-top: 1px solid var(--grid-line); background: var(--card-bg);
+            text-align: center;
+        }
+        .footer-logo { font-family: var(--font-display); font-size: 2rem; margin-bottom: 2rem; display: block; color: white; }
+        .footer-credit { font-family: var(--font-code); color: var(--text-secondary); font-size: 0.8rem; }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .nav-links { display: none; }
+            .hero h1 { font-size: 3.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="noise"></div>
+    <div class="cursor-dot"></div>
+    <div class="cursor-circle"></div>
+
+    <nav>
+        <a href="#" class="logo">C / <span>FLOW</span></a>
+        <div class="nav-links">
+            <a href="#if-else" data-hover>Conditions</a>
+            <a href="#switch" data-hover>Switch</a>
+            <a href="#loops" data-hover>Loops</a>
+            <a href="#jump" data-hover>Jumps</a>
+            <a href="#advanced" data-hover>CPU Level</a>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <canvas id="heroCanvas"></canvas>
+        <div class="container">
+            <h1>
+                <span>Control</span>
+                <span>Flow</span>
+                <span>Logic</span>
+            </h1>
+            <p>Master decision making, loops, and machine-level execution. Learn how to direct the CPU's path through your code effectively.</p>
+            <div class="btn-group">
+                <a href="#if-else" class="btn btn-primary" data-hover>Start Learning</a>
+                <a href="#advanced" class="btn" data-hover>View Architecture</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="if-else">
+        <div class="container">
+            <h2 class="section-title">Conditional Logic</h2>
+            <p class="section-desc">The if statement executes code only if a condition is true. The else clause provides an alternative path.</p>
+
+            <div class="grid-3">
+                <div class="card scroll-reveal" data-hover>
+                    <h3>Basic If</h3>
+                    <p>Execute code only when condition is true.</p>
+<div class="terminal-window" style="box-shadow:none; margin-top:1rem;">
+<div class="code-content" style="padding:1rem;">if (age >= 18) {
+    printf("Adult");
+}</div></div>
+                </div>
+
+                <div class="card scroll-reveal" data-hover>
+                    <h3>If-Else</h3>
+                    <p>Handle both true and false outcomes.</p>
+<div class="terminal-window" style="box-shadow:none; margin-top:1rem;">
+<div class="code-content" style="padding:1rem;">if (score >= 60) {
+    printf("Pass");
+} else {
+    printf("Fail");
+}</div></div>
+                </div>
+
+                <div class="card scroll-reveal" data-hover>
+                    <h3>Ternary</h3>
+                    <p>Shorthand for simple if-else assignment.</p>
+<div class="terminal-window" style="box-shadow:none; margin-top:1rem;">
+<div class="code-content" style="padding:1rem;">// condition ? true : false
+int max = (a > b) ? a : b;</div></div>
+                </div>
+            </div>
+
+            <div class="terminal-window scroll-reveal">
+                <div class="terminal-header">
+                    <div class="dot" style="background:#ff5f56"></div>
+                    <div class="dot" style="background:#ffbd2e"></div>
+                    <div class="dot" style="background:#27c93f"></div>
+                    <span style="margin-left: 10px; color: #666; font-family: var(--font-code); font-size: 0.8rem;">decisions.c</span>
+                </div>
+<div class="code-content"><span class="kw">#include</span> <span class="str">&lt;stdio.h&gt;</span>
+
+<span class="kw">int</span> <span class="fn">main</span>() {
+    <span class="kw">int</span> age = 25;
+    <span class="kw">int</span> income = 50000;
+
+    <span class="cmt">// Nested If Statements</span>
+    <span class="kw">if</span> (age >= 18) {
+        <span class="fn">printf</span>(<span class="str">"Adult\n"</span>);
+        
+        <span class="kw">if</span> (income >= 30000) {
+            <span class="fn">printf</span>(<span class="str">"Good income\n"</span>);
+        }
+    } <span class="kw">else</span> {
+        <span class="fn">printf</span>(<span class="str">"Minor\n"</span>);
+    }
+    <span class="kw">return</span> 0;
+}</div>
+            </div>
+        </div>
+    </section>
+
+    <section id="switch">
+        <div class="container">
+            <h2 class="section-title">Switch Architecture</h2>
+            <p class="section-desc">Multi-way branching optimization. More efficient than multiple if-else statements for fixed values.</p>
+
+            <div class="terminal-window scroll-reveal">
+                <div class="terminal-header">
+                    <span style="margin-left: 10px; color: #666; font-family: var(--font-code); font-size: 0.8rem;">switch.c</span>
+                </div>
+<div class="code-content"><span class="kw">switch</span> (option) {
+    <span class="kw">case</span> 1:
+        <span class="fn">printf</span>(<span class="str">"Creating file...\n"</span>);
+        <span class="kw">break</span>;  <span class="cmt">// Exit switch</span>
+    <span class="kw">case</span> 2:
+        <span class="fn">printf</span>(<span class="str">"Opening file...\n"</span>);
+        <span class="kw">break</span>;
+    <span class="kw">default</span>:
+        <span class="fn">printf</span>(<span class="str">"Unknown option\n"</span>);
+}</div>
+            </div>
+
+            <div class="machine-level scroll-reveal">
+                <h4>Machine Level: The Jump Table</h4>
+                <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                    Compilers optimize consecutive switch cases into a <strong>Jump Table</strong>. Instead of checking conditions sequentially (O(n)), the CPU uses the value to calculate the memory address of the code to run directly (O(1)).
+                </p>
+<div class="code-content" style="background: #000; padding: 1rem; border-radius: 4px;">// Pseudo-Assembly Representation
+jump_table[] = { &case1, &case2, &case3, &default };
+goto jump_table[option];  // Direct Jump!</div>
+            </div>
+
+            <div class="warning-box scroll-reveal">
+                <strong>⚠ Common Mistake: Fall-Through</strong>
+                Forgetting the <code>break;</code> statement causes execution to "fall through" to the next case automatically. Always check your breaks!
+            </div>
+        </div>
+    </section>
+
+    <section id="loops">
+        <div class="container">
+            <h2 class="section-title">Iteration Loops</h2>
+            <p class="section-desc">Repeating code blocks efficiently.</p>
+
+            <div class="grid-3">
+                <div class="card scroll-reveal" data-hover>
+                    <h3>For Loop</h3>
+                    <p>Best when iteration count is known.</p>
+<div class="code-content" style="padding:1rem; background:transparent;">for (int i=0; i<10; i++) {
+    printf("%d", i);
+}</div>
+                </div>
+
+                <div class="card scroll-reveal" data-hover>
+                    <h3>While Loop</h3>
+                    <p>Best for unknown iteration counts.</p>
+<div class="code-content" style="padding:1rem; background:transparent;">while (count < 5) {
+    count++;
+}</div>
+                </div>
+
+                <div class="card scroll-reveal" data-hover>
+                    <h3>Do-While</h3>
+                    <p>Guarantees execution at least once.</p>
+<div class="code-content" style="padding:1rem; background:transparent;">do {
+    // runs once first
+} while(condition);</div>
+                </div>
+            </div>
+
+            <div class="highlight-box scroll-reveal">
+                <strong>Loop Optimization: Unrolling</strong><br>
+                Compilers often "unroll" loops to reduce jump overhead. Instead of checking the condition every time, it might execute the body 4 times in a row before checking again.
+            </div>
+        </div>
+    </section>
+
+    <section id="jump">
+        <div class="container">
+            <h2 class="section-title">Jump Statements</h2>
+            <p class="section-desc">Altering the natural flow of execution.</p>
+
+            <div class="terminal-window scroll-reveal">
+                <div class="terminal-header"><span style="color:#666;">control.c</span></div>
+<div class="code-content"><span class="kw">for</span> (<span class="kw">int</span> i = 0; i < 10; i++) {
+    
+    <span class="kw">if</span> (i == 3) {
+        <span class="kw">continue</span>;  <span class="cmt">// Skips rest of this iteration</span>
+    }
+    
+    <span class="kw">if</span> (i == 8) {
+        <span class="kw">break</span>;     <span class="cmt">// Exits the loop entirely</span>
+    }
+    
+    <span class="fn">printf</span>(<span class="str">"%d "</span>, i);
+}
+<span class="cmt">// Output: 0 1 2 4 5 6 7</span></div>
+            </div>
+
+            <div class="warning-box scroll-reveal" style="border-color: var(--accent-color); color: var(--text-secondary); background: rgba(255, 60, 0, 0.05);">
+                <strong>⚠ Note on GOTO</strong><br>
+                C supports <code>goto label;</code>, but it is considered bad practice as it creates "spaghetti code". It is typically only used for error handling cleanup in system programming.
+            </div>
+        </div>
+    </section>
+
+    <section id="advanced">
+        <div class="container">
+            <h2 class="section-title">Advanced Architecture</h2>
+            <p class="section-desc">How the CPU handles your decisions.</p>
+
+            <div class="machine-level scroll-reveal">
+                <h4>Branch Prediction</h4>
+                <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                    Modern CPUs use pipelines to execute instructions. A "branch" (if statement) breaks this pipeline because the CPU doesn't know which code to load next.
+                </p>
+                <p style="color: var(--text-secondary);">
+                    To fix this, CPUs <strong>guess</strong> the outcome (Branch Prediction). If guessed correctly, execution is instant. If wrong, the pipeline is flushed (performance penalty).
+                </p>
+                <br>
+                <strong>Optimization Tip:</strong> Sort data before processing to make branches predictable!
+            </div>
+
+            <div class="terminal-window scroll-reveal">
+<div class="code-content"><span class="cmt">// BAD: Unpredictable Branching</span>
+<span class="kw">if</span> (rand() % 2 == 0) { ... }
+
+<span class="cmt">// GOOD: Predictable (e.g. sorted array)</span>
+<span class="kw">if</span> (arr[i] > 128) { ... } 
+<span class="cmt">// CPU learns "True" happens often after sorting</span></div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <a href="#" class="footer-logo">C / <span>FLOW</span></a>
+        <div class="nav-links" style="justify-content: center; margin-bottom: 2rem;">
+            <a href="#if-else" data-hover>If/Else</a>
+            <a href="#switch" data-hover>Switch</a>
+            <a href="#loops" data-hover>Loops</a>
+        </div>
+        <p class="footer-credit">
+            &copy; 2026 CONTROL FLOW ARCHITECTURE.
+        </p>
+    </footer>
+
+    <script>
+        // --- 1. CUSTOM CURSOR LOGIC ---
+        const cursorDot = document.querySelector('.cursor-dot');
+        const cursorCircle = document.querySelector('.cursor-circle');
+        
+        window.addEventListener('mousemove', (e) => {
+            const x = e.clientX;
+            const y = e.clientY;
+            
+            // Dot follows instantly
+            cursorDot.style.left = `${x}px`;
+            cursorDot.style.top = `${y}px`;
+            
+            // Circle follows with delay/inertia
+            cursorCircle.animate({
+                left: `${x}px`,
+                top: `${y}px`
+            }, { duration: 500, fill: "forwards" });
+        });
+
+        // Add hover effect classes
+        document.querySelectorAll('[data-hover], a, button').forEach(el => {
+            el.addEventListener('mouseenter', () => document.body.classList.add('hovering'));
+            el.addEventListener('mouseleave', () => document.body.classList.remove('hovering'));
+        });
+
+        // --- 2. CANVAS ANIMATION ---
+        const canvas = document.getElementById('heroCanvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        const particles = [];
+        const particleCount = 60; 
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
+                this.size = Math.random() * 2;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                if(this.x < 0 || this.x > width) this.vx *= -1;
+                if(this.y < 0 || this.y > height) this.vy *= -1;
+            }
+            draw() {
+                ctx.fillStyle = '#ff3c00';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        for(let i=0; i<particleCount; i++) particles.push(new Particle());
+
+        function animateCanvas() {
+            ctx.clearRect(0, 0, width, height);
+            ctx.strokeStyle = 'rgba(255, 60, 0, 0.1)';
+            ctx.lineWidth = 1;
+            
+            for(let i=0; i<particles.length; i++) {
+                particles[i].update();
+                particles[i].draw();
+                for(let j=i; j<particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    if(dist < 150) {
+                        ctx.beginPath();
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+            requestAnimationFrame(animateCanvas);
+        }
+        animateCanvas();
+
+        // --- 3. SCROLL REVEAL ---
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('in-view');
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.scroll-reveal').forEach((el) => {
+            observer.observe(el);
+        });
+    </script>
+</body>
+</html>

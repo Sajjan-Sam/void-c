@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C / HISTORY — The Foundation of Everything</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Syncopate:wght@400;700&family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- 1. CORE VARIABLES --- */
+        :root {
+            --bg-color: #050505;
+            --surface-color: #0b0b0b;
+            --card-bg: #111111;
+            --text-primary: #ffffff;
+            --text-secondary: #999999;
+            --accent-color: #ff3c00; /* International Orange */
+            --accent-glow: rgba(255, 60, 0, 0.15);
+            --border-color: rgba(255, 255, 255, 0.12);
+            --grid-line: rgba(255, 255, 255, 0.04);
+            
+            /* Typography */
+            --font-display: 'Syncopate', sans-serif;
+            --font-body: 'Space Grotesk', sans-serif;
+            --font-code: 'JetBrains Mono', monospace;
+            
+            --easing: cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* --- 2. RESET & BASE --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; cursor: none; }
+        
+        html { scroll-behavior: smooth; }
+        
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.7;
+        }
+
+        a { text-decoration: none; color: inherit; cursor: none; }
+        ul { list-style: none; }
+
+        /* --- 3. UTILITIES --- */
+        /* Film Grain Noise */
+        .noise {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 900; opacity: 0.035;
+            background: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='1'/%3E%3C/svg%3E");
+        }
+
+        /* Custom Magnetic Cursor */
+        .cursor-dot, .cursor-circle {
+            position: fixed; top: 0; left: 0; transform: translate(-50%, -50%);
+            border-radius: 50%; pointer-events: none; z-index: 9999;
+        }
+        .cursor-dot { width: 6px; height: 6px; background: var(--accent-color); }
+        .cursor-circle { 
+            width: 40px; height: 40px; border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: width 0.3s, height 0.3s, background-color 0.3s;
+        }
+        body.hovering .cursor-circle {
+            width: 80px; height: 80px; background: var(--accent-glow); border-color: var(--accent-color);
+        }
+
+        /* --- 4. LAYOUT --- */
+        .container {
+            max-width: 1400px; margin: 0 auto; padding: 0 5vw;
+        }
+        
+        section { 
+            padding: 8rem 0; 
+            position: relative; 
+            border-bottom: 1px solid var(--grid-line); 
+        }
+
+        /* --- 5. NAVIGATION --- */
+        nav {
+            position: fixed; top: 0; left: 0; width: 100%; padding: 1.5rem 5vw;
+            display: flex; justify-content: space-between; align-items: center;
+            z-index: 1000; background: rgba(5,5,5,0.85); backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .logo {
+            font-family: var(--font-display); font-weight: 700;
+            text-transform: uppercase; font-size: 1.1rem; letter-spacing: 2px;
+            color: white; transition: color 0.3s;
+        }
+        .logo span { color: var(--accent-color); }
+
+        .nav-links { display: flex; gap: 2.5rem; }
+        .nav-links a {
+            font-family: var(--font-code); font-size: 0.75rem; text-transform: uppercase;
+            position: relative; color: var(--text-secondary); letter-spacing: 1px;
+            transition: color 0.3s;
+        }
+        .nav-links a:hover { color: white; }
+        .nav-links a::after {
+            content: ''; position: absolute; bottom: -5px; left: 0; width: 0; height: 1px;
+            background: var(--accent-color); transition: width 0.3s var(--easing);
+        }
+        .nav-links a:hover::after { width: 100%; }
+
+        /* --- 6. HERO SECTION --- */
+        .hero {
+            min-height: 100vh; display: flex; flex-direction: column; justify-content: center;
+            position: relative; overflow: hidden; border-bottom: none; padding-top: 10rem;
+        }
+
+        #heroCanvas {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+            opacity: 0.3;
+        }
+
+        .hero h1 {
+            font-family: var(--font-display); font-size: clamp(3rem, 10vw, 8rem);
+            line-height: 0.95; text-transform: uppercase; font-weight: 700;
+            margin-bottom: 2rem; color: white;
+        }
+
+        .hero h1 span {
+            display: block; opacity: 0; transform: translateY(50px);
+            animation: textReveal 1s var(--easing) forwards;
+        }
+        /* Staggered animation for hero text */
+        .hero h1 span:nth-child(1) { animation-delay: 0.1s; }
+        .hero h1 span:nth-child(2) { animation-delay: 0.2s; color: transparent; -webkit-text-stroke: 1px white; }
+        .hero h1 span:nth-child(3) { animation-delay: 0.3s; color: var(--accent-color); -webkit-text-stroke: 0; }
+
+        .hero p {
+            font-family: var(--font-body); max-width: 600px; color: var(--text-secondary);
+            font-size: 1.1rem; line-height: 1.7; margin-bottom: 3rem;
+            opacity: 0; animation: fadeIn 1s 0.6s forwards;
+        }
+
+        .btn-group { display: flex; gap: 1.5rem; opacity: 0; animation: fadeIn 1s 0.8s forwards; }
+        
+        .btn {
+            background: transparent; color: white; padding: 1rem 2.5rem;
+            font-family: var(--font-code); font-weight: 700; text-transform: uppercase;
+            border: 1px solid var(--border-color); transition: all 0.3s;
+            display: inline-flex; align-items: center; justify-content: center;
+            letter-spacing: 1px;
+        }
+        .btn-primary { background: var(--accent-color); border-color: var(--accent-color); color: #000; }
+        .btn:hover { transform: translateY(-4px); box-shadow: 0 10px 30px rgba(255, 60, 0, 0.15); }
+
+        /* --- 7. STATS GRID --- */
+        .stats-bar {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color);
+        }
+        .stat-item {
+            padding: 4rem 2rem; border-right: 1px solid var(--border-color);
+            text-align: center; transition: background 0.3s;
+        }
+        .stat-item:hover { background: var(--card-bg); }
+        .stat-num {
+            display: block; font-family: var(--font-display); font-size: 3rem;
+            color: white; margin-bottom: 0.5rem; line-height: 1;
+        }
+        .stat-label { font-family: var(--font-code); font-size: 0.75rem; color: var(--accent-color); letter-spacing: 1px; }
+
+        /* --- 8. COMMON COMPONENTS --- */
+        .section-title {
+            font-family: var(--font-display); font-size: clamp(2rem, 5vw, 3.5rem);
+            margin-bottom: 1.5rem; color: white; text-transform: uppercase;
+        }
+        .section-desc {
+            color: var(--text-secondary); margin-bottom: 4rem; max-width: 800px; 
+            font-size: 1.1rem; line-height: 1.8;
+        }
+
+        .grid-3 {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 2rem;
+        }
+
+        .card {
+            background: var(--card-bg); border: 1px solid var(--border-color);
+            padding: 2.5rem; position: relative; transition: all 0.4s var(--easing);
+            overflow: hidden;
+        }
+        .card:hover { transform: translateY(-10px); border-color: var(--accent-color); }
+        .card h3 { 
+            font-family: var(--font-display); font-size: 1.25rem; margin-bottom: 1rem; 
+            color: white; text-transform: uppercase; 
+        }
+        .card p, .card ul { color: var(--text-secondary); font-size: 0.95rem; line-height: 1.7; }
+        .card ul { padding-left: 1.2rem; list-style: square; }
+        .card ul li { margin-bottom: 0.5rem; }
+        .card-icon { font-size: 2rem; margin-bottom: 1.5rem; display: block; }
+
+        /* --- 9. TERMINAL / CODE WINDOW (FIXED!) --- */
+        .terminal-window {
+            background: #080808; border: 1px solid var(--border-color); 
+            border-radius: 8px; overflow: hidden; margin-top: 2rem;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+        .terminal-header {
+            background: #151515; padding: 0.8rem 1.2rem; border-bottom: 1px solid #222;
+            display: flex; gap: 0.6rem; align-items: center;
+        }
+        .dot { width: 12px; height: 12px; border-radius: 50%; }
+        .code-content { 
+            padding: 2rem; 
+            font-family: var(--font-code); 
+            font-size: 0.9rem; 
+            line-height: 1.6;
+            color: #d4d4d4; 
+            overflow-x: auto;
+            /* THE CRITICAL FIX: Preserve whitespace and line breaks */
+            white-space: pre; 
+        }
+        /* Syntax Highlighting */
+        .kw { color: #ff3c00; font-weight: bold; } /* Keyword */
+        .str { color: #a5d6ff; } /* String */
+        .fn { color: #dcdcaa; } /* Function */
+        .cmt { color: #6a9955; font-style: italic; } /* Comment */
+        .type { color: #4ec9b0; } /* Type */
+
+        /* --- 10. TIMELINE --- */
+        .timeline { position: relative; max-width: 900px; margin: 0 auto; }
+        .timeline::before {
+            content: ''; position: absolute; left: 0; top: 0; height: 100%; width: 1px;
+            background: var(--border-color);
+        }
+        .timeline-item { padding-left: 4rem; margin-bottom: 5rem; position: relative; }
+        .timeline-item:last-child { margin-bottom: 0; }
+        .timeline-item::before {
+            content: ''; position: absolute; left: -5px; top: 0.5rem; width: 11px; height: 11px;
+            background: var(--bg-color); border: 2px solid var(--accent-color); border-radius: 50%;
+            transition: background 0.3s;
+        }
+        .timeline-item:hover::before { background: var(--accent-color); }
+        .year { 
+            font-family: var(--font-display); font-size: 1.5rem; color: var(--accent-color); 
+            margin-bottom: 0.5rem; display: block; 
+        }
+        .timeline-content h3 { font-size: 1.5rem; color: white; margin-bottom: 0.5rem; }
+
+        /* --- 11. COMPARISON TABLE --- */
+        .table-container { overflow-x: auto; }
+        .comparison-table { 
+            width: 100%; border-collapse: collapse; margin-top: 2rem; min-width: 600px; 
+        }
+        .comparison-table th { 
+            text-align: left; padding: 1.5rem; border-bottom: 2px solid var(--accent-color); 
+            color: var(--accent-color); font-family: var(--font-code); text-transform: uppercase;
+            font-size: 0.85rem; letter-spacing: 1px;
+        }
+        .comparison-table td { 
+            padding: 1.5rem; border-bottom: 1px solid var(--border-color); 
+            color: var(--text-secondary); font-size: 0.95rem;
+        }
+        .comparison-table tr:hover td { color: white; background: rgba(255,255,255,0.02); }
+
+        /* --- 12. HARDWARE STACK DIAGRAM --- */
+        .stack-container { display: flex; flex-direction: column; gap: 4px; margin-top: 2rem; }
+        .stack-item {
+            padding: 1rem; border: 1px solid var(--border-color); text-align: center;
+            font-family: var(--font-code); color: var(--text-secondary); font-size: 0.8rem;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        .stack-high { background: #1a1a1a; }
+        .stack-c { border-color: var(--accent-color); color: var(--accent-color); background: rgba(255,60,0,0.05); }
+        .stack-hw { background: #000; border-color: #333; }
+
+        /* --- 13. ANIMATIONS --- */
+        @keyframes textReveal { to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { to { opacity: 1; } }
+        .scroll-reveal { opacity: 0; transform: translateY(40px); transition: all 0.8s var(--easing); }
+        .scroll-reveal.in-view { opacity: 1; transform: translateY(0); }
+
+        /* --- 14. FOOTER --- */
+        footer {
+            padding: 6rem 5vw; border-top: 1px solid var(--grid-line); background: var(--card-bg);
+            text-align: center;
+        }
+        .footer-logo { font-family: var(--font-display); font-size: 2rem; margin-bottom: 2rem; display: block; }
+        .footer-credit { font-family: var(--font-code); color: var(--text-secondary); font-size: 0.8rem; }
+
+        /* Responsive Fixes */
+        @media (max-width: 900px) {
+            .nav-links { display: none; }
+            .hero h1 { font-size: 3.5rem; }
+            .stats-bar { grid-template-columns: 1fr 1fr; }
+            .stat-item { padding: 2rem; border-bottom: 1px solid var(--border-color); }
+            .stat-item:nth-child(2) { border-right: none; }
+            .comparison-table { font-size: 0.8rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="noise"></div>
+    <div class="cursor-dot"></div>
+    <div class="cursor-circle"></div>
+
+    <nav>
+        <a href="#" class="logo">C / <span>HIST</span></a>
+        <div class="nav-links">
+            <a href="#intro" data-hover>Why C?</a>
+            <a href="#timeline" data-hover>Timeline</a>
+            <a href="#compilation" data-hover>Process</a>
+            <a href="#setup" data-hover>Setup</a>
+            <a href="#hello" data-hover>Code</a>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <canvas id="heroCanvas"></canvas>
+        <div class="container">
+            <h1>
+                <span>History</span>
+                <span>Of C</span>
+                <span>Language</span>
+            </h1>
+            <p>Discover how a simple language created in 1972 became the foundation of modern computing and shaped the digital world we know today.</p>
+            <div class="btn-group">
+                <a href="#timeline" class="btn btn-primary" data-hover>Start Timeline</a>
+                <a href="#pioneers" class="btn" data-hover>Meet Pioneers</a>
+            </div>
+        </div>
+    </section>
+
+    <div class="stats-bar">
+        <div class="stat-item scroll-reveal">
+            <span class="stat-num">52</span>
+            <span class="stat-label">YEARS STRONG</span>
+        </div>
+        <div class="stat-item scroll-reveal">
+            <span class="stat-num">90%</span>
+            <span class="stat-label">OF OS KERNELS</span>
+        </div>
+        <div class="stat-item scroll-reveal">
+            <span class="stat-num">#1</span>
+            <span class="stat-label">SYSTEMS LANG</span>
+        </div>
+        <div class="stat-item scroll-reveal">
+            <span class="stat-num">INF</span>
+            <span class="stat-label">LEGACY</span>
+        </div>
+    </div>
+
+    <section id="intro">
+        <div class="container">
+            <h2 class="section-title">Why C Matters</h2>
+            <p class="section-desc">While Python and JS hide complexity, C forces you to understand the machine. It is the gateway to deep computing knowledge.</p>
+            
+            <div class="grid-3">
+                <div class="card scroll-reveal" data-hover>
+                    <span class="card-icon">🏗️</span>
+                    <h3>Real World Usage</h3>
+                    <ul>
+                        <li><strong>OS:</strong> Linux, Windows, macOS kernels</li>
+                        <li><strong>Databases:</strong> PostgreSQL, SQLite, MySQL</li>
+                        <li><strong>Compilers:</strong> GCC, LLVM, Python Interpreter</li>
+                        <li><strong>Embedded:</strong> Arduino, IoT, Mars Rovers</li>
+                    </ul>
+                </div>
+                
+                <div class="card scroll-reveal" data-hover>
+                    <span class="card-icon">⚡</span>
+                    <h3>The Philosophy</h3>
+                    <ul>
+                        <li><strong>Trust:</strong> The programmer knows best.</li>
+                        <li><strong>Efficiency:</strong> Maps directly to assembly.</li>
+                        <li><strong>Portability:</strong> Code from 1980 runs today.</li>
+                        <li><strong>Control:</strong> No garbage collection overhead.</li>
+                    </ul>
+                </div>
+
+                <div class="card scroll-reveal" style="border-color: var(--accent-color);" data-hover>
+                    <span class="card-icon">💻</span>
+                    <h3>Hardware Stack</h3>
+                    <div class="stack-container">
+                        <div class="stack-item stack-high">Apps (Python/JS)</div>
+                        <div class="stack-item stack-high">Runtime (VM/JIT)</div>
+                        <div class="stack-item stack-c">OS Kernel (C Language)</div>
+                        <div class="stack-item stack-c">Drivers (C/Asm)</div>
+                        <div class="stack-item stack-hw">Hardware (Silicon)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="compilation">
+        <div class="container">
+            <h2 class="section-title">The Build Process</h2>
+            <p class="section-desc">How source code becomes a running program. The journey from human-readable text to machine-executable binary.</p>
+
+            <div class="grid-3">
+                <div class="card scroll-reveal" data-hover>
+                    <span style="font-family: var(--font-display); font-size: 3rem; color: #333;">01</span>
+                    <h3>Preprocessing</h3>
+                    <p>Handles <code>#include</code> and <code>#define</code>. Expands macros and removes comments.</p>
+                    <div class="terminal-window" style="margin-top: 1rem; box-shadow: none;">
+                        <div class="terminal-header"><span style="color:#666; font-size:0.7rem;">CMD</span></div>
+                        <div class="code-content" style="padding: 1rem;">$ gcc -E file.c</div>
+                    </div>
+                </div>
+
+                <div class="card scroll-reveal" data-hover>
+                    <span style="font-family: var(--font-display); font-size: 3rem; color: #333;">02</span>
+                    <h3>Compiling</h3>
+                    <p>Translates C code into Assembly language specific to your CPU architecture.</p>
+                    <div class="terminal-window" style="margin-top: 1rem; box-shadow: none;">
+                        <div class="terminal-header"><span style="color:#666; font-size:0.7rem;">CMD</span></div>
+                        <div class="code-content" style="padding: 1rem;">$ gcc -S file.c</div>
+                    </div>
+                </div>
+
+                <div class="card scroll-reveal" data-hover>
+                    <span style="font-family: var(--font-display); font-size: 3rem; color: #333;">03</span>
+                    <h3>Linking</h3>
+                    <p>Combines object files and libraries into the final executable binary.</p>
+                    <div class="terminal-window" style="margin-top: 1rem; box-shadow: none;">
+                        <div class="terminal-header"><span style="color:#666; font-size:0.7rem;">CMD</span></div>
+                        <div class="code-content" style="padding: 1rem;">$ gcc file.o -o app</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="timeline">
+        <div class="container">
+            <h2 class="section-title">Timeline</h2>
+            <div class="timeline">
+                <div class="timeline-item scroll-reveal">
+                    <span class="year">1972</span>
+                    <div class="timeline-content">
+                        <h3>The Birth of C</h3>
+                        <p>Dennis Ritchie created C at Bell Labs as an evolution of the B language. It combined high-level elegance with the raw power of assembly.</p>
+                    </div>
+                </div>
+                <div class="timeline-item scroll-reveal">
+                    <span class="year">1973</span>
+                    <div class="timeline-content">
+                        <h3>Unix Rewrite</h3>
+                        <p>The Unix kernel was rewritten in C. This was revolutionary, making Unix the first portable operating system and cementing C's legacy.</p>
+                    </div>
+                </div>
+                <div class="timeline-item scroll-reveal">
+                    <span class="year">1978</span>
+                    <div class="timeline-content">
+                        <h3>The K&R Book</h3>
+                        <p>Brian Kernighan and Dennis Ritchie published "The C Programming Language". This became the bible of C programming.</p>
+                    </div>
+                </div>
+                <div class="timeline-item scroll-reveal">
+                    <span class="year">1989</span>
+                    <div class="timeline-content">
+                        <h3>ANSI C (C89)</h3>
+                        <p>The American National Standards Institute officially standardized C, ensuring code could run across different systems.</p>
+                    </div>
+                </div>
+                <div class="timeline-item scroll-reveal">
+                    <span class="year">1999</span>
+                    <div class="timeline-content">
+                        <h3>C99 Standard</h3>
+                        <p>Introduced inline functions, variable declarations anywhere in code, and better support for IEEE floating-point arithmetic.</p>
+                    </div>
+                </div>
+                <div class="timeline-item scroll-reveal">
+                    <span class="year">2026</span>
+                    <div class="timeline-content">
+                        <h3>Still Essential</h3>
+                        <p>Over 50 years later, C remains the bedrock of embedded systems, operating systems, and high-performance computing.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="pioneers">
+        <div class="container">
+            <h2 class="section-title">The Pioneers</h2>
+            <div class="grid-3">
+                <div class="card scroll-reveal" data-hover>
+                    <span class="card-icon">👨‍💻</span>
+                    <h3>Dennis Ritchie</h3>
+                    <p style="color: var(--accent-color); font-family: var(--font-code); font-size: 0.8rem; margin-bottom: 1rem;">CREATOR OF C</p>
+                    <p>Created C at Bell Labs and was a key developer of the Unix operating system. Recipient of the Turing Award.</p>
+                </div>
+                <div class="card scroll-reveal" data-hover>
+                    <span class="card-icon">📚</span>
+                    <h3>Brian Kernighan</h3>
+                    <p style="color: var(--accent-color); font-family: var(--font-code); font-size: 0.8rem; margin-bottom: 1rem;">CO-AUTHOR K&R</p>
+                    <p>Co-authored the definitive C book. His clear writing style helped millions learn the language and its philosophy.</p>
+                </div>
+                <div class="card scroll-reveal" data-hover>
+                    <span class="card-icon">⚙️</span>
+                    <h3>Ken Thompson</h3>
+                    <p style="color: var(--accent-color); font-family: var(--font-code); font-size: 0.8rem; margin-bottom: 1rem;">UNIX CREATOR</p>
+                    <p>Created the B language (predecessor to C) and the original Unix system. A partner to Ritchie at Bell Labs.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="comparison">
+        <div class="container">
+            <h2 class="section-title">High vs Low Level</h2>
+            <p class="section-desc">C sits in the "sweet spot" — high enough to be readable, low enough to control the hardware.</p>
+            
+            <div class="table-container scroll-reveal">
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Feature</th>
+                            <th>High Level (Python/Java)</th>
+                            <th>C Language (Hybrid)</th>
+                            <th>Low Level (Assembly)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Performance</td>
+                            <td>Slower (Virtual Machine overhead)</td>
+                            <td style="color: var(--accent-color);">Blazingly Fast</td>
+                            <td>Fastest (Direct hardware)</td>
+                        </tr>
+                        <tr>
+                            <td>Memory</td>
+                            <td>Automatic (Garbage Collection)</td>
+                            <td style="color: var(--accent-color);">Manual (Pointers)</td>
+                            <td>Direct Address Access</td>
+                        </tr>
+                        <tr>
+                            <td>Hardware</td>
+                            <td>Abstracted / Hidden</td>
+                            <td style="color: var(--accent-color);">Direct Access</td>
+                            <td>Full Control</td>
+                        </tr>
+                        <tr>
+                            <td>Portability</td>
+                            <td>High (Run anywhere with VM)</td>
+                            <td style="color: var(--accent-color);">High (Recompile anywhere)</td>
+                            <td>Low (CPU Specific)</td>
+                        </tr>
+                        <tr>
+                            <td>Readability</td>
+                            <td>Like English</td>
+                            <td style="color: var(--accent-color);">Structured & Technical</td>
+                            <td>Cryptic Mnemonics</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <section id="setup">
+        <div class="container">
+            <h2 class="section-title">Initialize Environment</h2>
+            <p class="section-desc">Getting started with C is simple. Choose your compiler based on your OS.</p>
+
+            <div class="grid-3" style="margin-bottom: 4rem;">
+                <div class="card scroll-reveal" data-hover>
+                    <h3>Windows</h3>
+                    <p>Install MinGW or use VS Code.</p>
+                    <div class="terminal-window" style="margin-top:1rem; box-shadow: none;">
+                        <div class="code-content" style="padding:1rem;">gcc -o app.exe app.c</div>
+                    </div>
+                </div>
+                <div class="card scroll-reveal" data-hover>
+                    <h3>macOS</h3>
+                    <p>Install Xcode Command Line Tools.</p>
+                    <div class="terminal-window" style="margin-top:1rem; box-shadow: none;">
+                        <div class="code-content" style="padding:1rem;">clang -o app app.c</div>
+                    </div>
+                </div>
+                <div class="card scroll-reveal" data-hover>
+                    <h3>Linux</h3>
+                    <p>GCC is usually pre-installed.</p>
+                    <div class="terminal-window" style="margin-top:1rem; box-shadow: none;">
+                        <div class="code-content" style="padding:1rem;">gcc -o app app.c</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="hello" class="scroll-reveal">
+                <h2 class="section-title" style="font-size: 2rem;">Hello World Code Structure</h2>
+                <p class="section-desc">Anatomy of your first program. Notice how readable yet precise it is.</p>
+                
+                <div class="terminal-window">
+                    <div class="terminal-header">
+                        <div class="dot" style="background:#ff5f56"></div>
+                        <div class="dot" style="background:#ffbd2e"></div>
+                        <div class="dot" style="background:#27c93f"></div>
+                        <span style="margin-left: 10px; color: #666; font-family: var(--font-code); font-size: 0.8rem;">hello.c</span>
+                    </div>
+                    <div class="code-content"><span class="cmt">/* Preprocessor Directive:
+   Includes the Standard Input/Output library for printing 
+*/</span>
+<span class="kw">#include</span> <span class="str">&lt;stdio.h&gt;</span>
+
+<span class="cmt">// Main function: The entry point where execution begins</span>
+<span class="kw">int</span> <span class="fn">main</span>() {
+    
+    <span class="cmt">// Variable declaration</span>
+    <span class="type">int</span> age = <span class="str">25</span>;
+
+    <span class="cmt">// printf outputs formatted text to the console</span>
+    <span class="fn">printf</span>(<span class="str">"Hello, C World!\n"</span>);
+    <span class="fn">printf</span>(<span class="str">"I am %d years old.\n"</span>, age);
+    
+    <span class="cmt">// Return 0 to the OS to indicate success</span>
+    <span class="kw">return</span> 0;
+}</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <a href="#" class="logo footer-logo">C / <span>HIST</span></a>
+        <div class="nav-links" style="justify-content: center; margin-bottom: 2rem;">
+            <a href="#intro" data-hover>Why C?</a>
+            <a href="#timeline" data-hover>History</a>
+            <a href="#setup" data-hover>Start Now</a>
+        </div>
+        <p class="footer-credit">
+            &copy; 2026 HISTORY OF C PROGRAMMING LANGUAGE. <br>
+            PRESERVING THE LEGACY OF SYSTEMS ENGINEERING.
+        </p>
+    </footer>
+
+    <script>
+        // --- 1. CUSTOM CURSOR LOGIC ---
+        const cursorDot = document.querySelector('.cursor-dot');
+        const cursorCircle = document.querySelector('.cursor-circle');
+        
+        window.addEventListener('mousemove', (e) => {
+            const x = e.clientX;
+            const y = e.clientY;
+            
+            // Dot follows instantly
+            cursorDot.style.left = `${x}px`;
+            cursorDot.style.top = `${y}px`;
+            
+            // Circle follows with delay/inertia
+            cursorCircle.animate({
+                left: `${x}px`,
+                top: `${y}px`
+            }, { duration: 500, fill: "forwards" });
+        });
+
+        // Add hover effect classes
+        document.querySelectorAll('[data-hover], a, button').forEach(el => {
+            el.addEventListener('mouseenter', () => document.body.classList.add('hovering'));
+            el.addEventListener('mouseleave', () => document.body.classList.remove('hovering'));
+        });
+
+        // --- 2. INTERACTIVE CANVAS BACKGROUND ---
+        const canvas = document.getElementById('heroCanvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        const particles = [];
+        const particleCount = 60; // Optimal for performance
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
+                this.size = Math.random() * 2;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                // Bounce off edges
+                if(this.x < 0 || this.x > width) this.vx *= -1;
+                if(this.y < 0 || this.y > height) this.vy *= -1;
+            }
+            draw() {
+                ctx.fillStyle = '#ff3c00';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        for(let i=0; i<particleCount; i++) particles.push(new Particle());
+
+        function animateCanvas() {
+            ctx.clearRect(0, 0, width, height);
+            
+            // Draw lines connecting close particles
+            ctx.strokeStyle = 'rgba(255, 60, 0, 0.1)';
+            ctx.lineWidth = 1;
+            
+            for(let i=0; i<particles.length; i++) {
+                particles[i].update();
+                particles[i].draw();
+                
+                for(let j=i; j<particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    
+                    if(dist < 150) {
+                        ctx.beginPath();
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+            requestAnimationFrame(animateCanvas);
+        }
+        animateCanvas();
+
+        // --- 3. SCROLL REVEAL ANIMATIONS ---
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('in-view');
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.scroll-reveal').forEach((el) => {
+            observer.observe(el);
+        });
+    </script>
+</body>
+</html>
