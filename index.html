@@ -209,6 +209,34 @@
         }
         .card-link::after { content: '→'; margin-left: 10px; transition: transform 0.3s; }
         .topic-card:hover .card-link::after { transform: translateX(10px); }
+        /* --- 6. MARQUEE --- */
+        .marquee-container {
+            padding: 4rem 0;
+            background: var(--accent-color);
+            transform: rotate(-2deg) scale(1.05);
+            margin: 4rem 0;
+            overflow: hidden;
+        }
+
+        .marquee-content {
+            white-space: nowrap;
+            display: flex;
+            animation: marquee 20s linear infinite;
+        }
+
+        .marquee-item {
+            font-family: 'Syncopate', sans-serif;
+            font-weight: 700;
+            font-size: 4rem;
+            color: black;
+            margin-right: 4rem;
+            text-transform: uppercase;
+        }
+
+        @keyframes marquee {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
 
         /* --- LEARNING PATH --- */
         .path-container {
@@ -348,6 +376,12 @@
             <span class="stat-label">UPDATED</span>
         </div>
     </div>
+    <div class="marquee-container">
+            <div class="marquee-content">
+                <div class="marquee-item">Variables // Operators // Control Flow Statement // Memory Management // Pointers // Function //Structure // Union // Algorithms // Optimization //</div>
+                <div class="marquee-item">Variables // Operators // Control Flow Statement // Memory Management // Pointers // Function //Structure // Union // Algorithms // Optimization //</div>
+            </div>
+        </div>
 
     <section id="topics">
         <div class="container">
@@ -705,3 +739,4 @@
 </body>
 
 </html>
+
